@@ -1,0 +1,47 @@
+name: Run KPM Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "v* tag to publish or validate"
+        required: true
+        type: string
+      dry_run:
+        description: "Build and validate, but publish nothing"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Trigger KPM release workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+
+          if [ "$DRY_RUN" = "true" ]; then
+            DRY_RUN_VALUE=true
+          else
+            DRY_RUN_VALUE=false
+          fi
+
+          gh workflow run release.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref KPM \
+            -f tag="$TAG" \
+            -f dry_run="$DRY_RUN_VALUE"
+
+          echo "Triggered release.yml from branch: KPM"
+          echo "Tag: $TAG"
+          echo "Dry run: $DRY_RUN_VALUE"
